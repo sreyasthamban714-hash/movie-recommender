@@ -50,8 +50,7 @@ public class MalayalamService {
                 String url = "https://api.themoviedb.org/3/discover/movie?api_key=" + apiKey
                         + "&with_original_language=ml&sort_by=popularity.desc"
                         + "&vote_count.gte=10&page=" + page;
-                Map<String, Object> body = rest.get().uri(url).retrieve()
-                        .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+                Map<String, Object> body = fetchPage(url);
                 if (body == null) break;
                 List<Map<String, Object>> results = (List<Map<String, Object>>) body.get("results");
                 if (results == null || results.isEmpty()) break;
@@ -91,7 +90,23 @@ public class MalayalamService {
         if (!list.isEmpty()) cache = list; // only cache a successful load
         return list;
     }
-
+    // Tries up to 3 times, because the network on the free server can be unreliable
+    private Map<String, Object> fetchPage(String url) throws Exception {
+        Exception last = null;
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                return rest.get().uri(url).retrieve()
+                        .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+            } catch (Exception e) {
+                last = e;
+                Throwable root = e;
+                while (root.getCause() != null) root = root.getCause();
+                System.out.println("TMDB attempt " + attempt + " failed: " + root);
+                Thread.sleep(1500);
+            }
+        }
+        throw last;
+    }
     public List<MalayalamMovie> search(String q, String sort) {
         List<MalayalamMovie> list = new ArrayList<>(all());
         if (q != null && !q.isBlank()) {
