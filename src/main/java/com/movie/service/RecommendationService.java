@@ -30,6 +30,11 @@ public class RecommendationService {
     // Loads everything into memory once, on first use
     private synchronized void init() {
         if (loaded) return;
+        movies.clear();
+        userRatings.clear();
+        movieRatings.clear();
+        norms.clear();
+
         for (Movie m : movieRepo.findAll()) {
             movies.put(m.getId(), m);
         }
@@ -39,6 +44,11 @@ public class RecommendationService {
             movieRatings.computeIfAbsent(r.getMovieId(), k -> new HashMap<>())
                     .put(r.getUserId(), r.getRating());
         }
+
+        if (movies.isEmpty() || movieRatings.isEmpty()) {
+            return;
+        }
+
         for (Map.Entry<Long, Map<Integer, Double>> e : movieRatings.entrySet()) {
             double sum = 0;
             for (double v : e.getValue().values()) sum += v * v;
