@@ -28,7 +28,7 @@ public class RecommendationService {
     }
 
     // Loads everything into memory once, on first use
-    private synchronized void init() {
+        private synchronized void init() {
         if (loaded) return;
         movies.clear();
         userRatings.clear();
@@ -45,6 +45,8 @@ public class RecommendationService {
                     .put(r.getUserId(), r.getRating());
         }
 
+        // Data not in the database yet: don't remember this empty result,
+        // try again on the next request
         if (movies.isEmpty() || movieRatings.isEmpty()) {
             return;
         }
@@ -55,25 +57,6 @@ public class RecommendationService {
             norms.put(e.getKey(), Math.sqrt(sum));
         }
         loaded = true;
-    }
-
-    private double avg(Map<Integer, Double> m) {
-        return m.values().stream().mapToDouble(Double::doubleValue).average().orElse(0);
-    }
-
-    public Movie getMovie(long id) {
-        init();
-        return movies.get(id);
-    }
-
-    public double getAverage(long id) {
-        init();
-        return avg(movieRatings.getOrDefault(id, Collections.emptyMap()));
-    }
-
-    public boolean hasUser(int userId) {
-        init();
-        return userRatings.containsKey(userId);
     }
 
     // Highest average rating, only movies with at least 50 ratings
